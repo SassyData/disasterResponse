@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    """Loads messages and categories data"""
     # load datasets
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
@@ -41,6 +42,8 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """Change from long to wide data - returns a df with message categories as column name
+    and binary outcomes in the columns"""
     # create a dataframe of the 36 individual category columns
     categories = df.categories.str.split(';', expand = True)
 
@@ -66,13 +69,15 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    """Saves data to SQL lite db of your naming choice."""
     # Upload to sql database
     engine = create_engine('sqlite:///'+database_filename)
-    df.to_sql('messages_db', engine, index = False)
+    df.to_sql('messages_db', engine, index = False, if_exists='replace')
     return
 
 
 def main():
+    "Run from the python terminal - must concluse all 4 sys args, below."
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]

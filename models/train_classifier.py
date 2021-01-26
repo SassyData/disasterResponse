@@ -18,7 +18,7 @@ import pickle
 
 
 def load_data(database_filepath):
-    # load data from database
+    """load data from database"""
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql_table('messages_db', con = engine)
     X = df.iloc[:, 1]
@@ -28,8 +28,7 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
-    # tokenize & lemmatize
-    # text = re.sub(r'[^\w\s]','',text)
+    """tokenize & lemmatize"""
     tokens = nltk.word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
     clean_tokens = []
@@ -41,16 +40,24 @@ def tokenize(text):
 
 
 def build_model():
+    """Creates processing and classification pipeline, then tunes parameters with cross validation"""
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer = tokenize)),
         ('tfidf', TfidfTransformer()),
         ('clf', MultiOutputClassifier(AdaBoostClassifier()))
     ])
-    return pipeline
+    # Define params to tune
+    parameters = {
+        'clf__estimator__n_estimators': [50, 100],
+        'clf__estimator__learning_rate': [0.8, 0.9, 1]
+    }
+    # instantiate GridSearch
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 10)
+    return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    # Predict using model
+    """Predict using model, then assess performance"""
     y_pred = model.predict(X_test)
     y_pred_df = pd.DataFrame(y_pred, columns = category_names)
     # Assess performance
@@ -61,11 +68,13 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """save to model_filepath"""
     pickle.dump(model, open(model_filepath, 'wb'))
     return
 
 
 def main():
+    """Runs from python commandline - ensure sys args (see below) are given."""
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
